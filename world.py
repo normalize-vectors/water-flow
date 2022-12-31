@@ -1,6 +1,5 @@
 import numpy as np
 from perlin_noise import PerlinNoise
-import matplotlib.pyplot as plt
 from random import seed, shuffle
 seed(a=1)
 
@@ -140,7 +139,6 @@ class World:
 
 if __name__ == "__main__":
     world = World()
-    plt.imshow(world.ground, cmap='gray')
 
     # world.ground[25][40] += 100
     # world.water[25][40] = 10
