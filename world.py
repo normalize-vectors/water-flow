@@ -2,7 +2,6 @@ import numpy as np
 from perlin_noise import PerlinNoise
 import matplotlib.pyplot as plt
 from random import seed, shuffle
-
 seed(a=1)
 
 
@@ -105,7 +104,7 @@ class World:
         delta = center_height - adjacent[2]
 
         xfer_coefficient = 0.8
-        cohesion_constant = 0.1
+        cohesion_constant = 0.01
 
         if center_ground > adjacent[2]:
             max_water_xfer = center_water
@@ -113,10 +112,14 @@ class World:
 
                 if max_water_xfer < cohesion_constant:
                     xfer = max_water_xfer
+                    self.water[x][y] = 0
+                    self.water[adjacent[0]][adjacent[1]] += xfer
+                    # TODO remove x,y from water_cells
                 else:
                     xfer = max_water_xfer*xfer_coefficient
-                self.water[x][y] = 0
-                self.water[adjacent[0]][adjacent[1]] += xfer
+                    self.water[x][y] -= xfer
+                    self.water[adjacent[0]][adjacent[1]] += xfer
+
                 return [pos, (adjacent[0], adjacent[1])]
 
         # Otherwise, water should be balanced between the 2 cells
@@ -128,6 +131,8 @@ class World:
         # Water transfer for situations 1 & 2
         self.water[x][y] -= water_xfer_to_balance
         self.water[adjacent[0]][adjacent[1]] += water_xfer_to_balance
+
+        # TODO add adjacent to water_cells
 
         # Return XY's of effected cells
         return [pos, (adjacent[0], adjacent[1])]
