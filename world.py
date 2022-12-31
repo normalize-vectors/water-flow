@@ -71,12 +71,6 @@ class World:
         flows due to a difference in height. Returns the XY coordinates of cells
         that were modified."""
 
-        # TODO - "surface tension" - don't allow water to flow into a cell if the amount is
-        # < some small number
-        # and/or
-        # TODO - make flow be based on a base constant, i.e. at least 1 water must flow,
-        # in addition to the xfer coefficient
-
         # TODO water selects adjacent to flow into by which has lowest height
 
         # Information about the cell of water that is doing the moving
@@ -84,11 +78,6 @@ class World:
         center_height = self.height(x, y)
         center_ground = self.ground[x][y]
         center_water = self.water[x][y]
-
-        # cohesion_threshold = 0.1
-        # Stop water from moving if it is too small of a pixel
-        # if cohesion_threshold > center_water:
-        #     return [None]
 
         # A list of XYZ that water will flow to
         adjacent_cells = self.adjacent_less_than((x, y), center_height)
@@ -105,7 +94,14 @@ class World:
         delta = center_height - adjacent[2]
 
         xfer_coefficient = 0.8
-        cohesion_constant = 0.1
+
+        # If the amount of water that would be left behind is smaller than this, then all water will be moved
+        cohesion_constant = 0.01
+
+        def cohesive_xfer(xfer):
+            self.water[x][y] = 0
+            self.water[adjacent[0]][adjacent[1]] += xfer
+            # TODO remove x,y from water_cells
 
         if center_ground > adjacent[2]:
             max_water_xfer = center_water
@@ -113,21 +109,31 @@ class World:
 
                 if max_water_xfer < cohesion_constant:
                     xfer = max_water_xfer
+                    cohesive_xfer(xfer)
                 else:
                     xfer = max_water_xfer*xfer_coefficient
-                self.water[x][y] = 0
-                self.water[adjacent[0]][adjacent[1]] += xfer
+                    self.water[x][y] -= xfer
+                    self.water[adjacent[0]][adjacent[1]] += xfer
+
                 return [pos, (adjacent[0], adjacent[1])]
 
-        # Otherwise, water should be balanced between the 2 cells
+        # Scenarios 1 & 2
         average_height = (center_height+adjacent[2])/2
 
         # This is the amount of water that will be necessary to give the two cells the same height
         water_xfer_to_balance = average_height - adjacent[2]
 
-        # Water transfer for situations 1 & 2
         self.water[x][y] -= water_xfer_to_balance
         self.water[adjacent[0]][adjacent[1]] += water_xfer_to_balance
+
+        # Adding cohesive_xfers for scenarios 1 & 2 is interesting, but not very water-like
+        # if water_xfer_to_balance < cohesion_constant:
+        #     cohesive_xfer(center_water)
+        # else:
+        #     self.water[x][y] -= water_xfer_to_balance
+        #     self.water[adjacent[0]][adjacent[1]] += water_xfer_to_balance
+
+        # TODO add adjacent to water_cells
 
         # Return XY's of effected cells
         return [pos, (adjacent[0], adjacent[1])]
