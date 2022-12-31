@@ -104,17 +104,19 @@ class World:
         # Difference in height between the center cell and the adjacent
         delta = center_height - adjacent[2]
 
-        xfer_coefficient = 0.5
+        xfer_coefficient = 0.8
+        cohesion_constant = 0.1
 
         if center_ground > adjacent[2]:
             max_water_xfer = center_water
-            if delta > max_water_xfer:
-                # xfer ALL water
-                xfer = max_water_xfer*xfer_coefficient
-                self.water[x][y] -= xfer
+            if delta > max_water_xfer:  # Scenario 3
+
+                if max_water_xfer < cohesion_constant:
+                    xfer = max_water_xfer
+                else:
+                    xfer = max_water_xfer*xfer_coefficient
+                self.water[x][y] = 0
                 self.water[adjacent[0]][adjacent[1]] += xfer
-                # self.water[x][y] = 0
-                # self.water[adjacent[0]][adjacent[1]] += max_water_xfer
                 return [pos, (adjacent[0], adjacent[1])]
 
         # Otherwise, water should be balanced between the 2 cells
@@ -123,24 +125,12 @@ class World:
         # This is the amount of water that will be necessary to give the two cells the same height
         water_xfer_to_balance = average_height - adjacent[2]
 
+        # Water transfer for situations 1 & 2
         self.water[x][y] -= water_xfer_to_balance
         self.water[adjacent[0]][adjacent[1]] += water_xfer_to_balance
+
+        # Return XY's of effected cells
         return [pos, (adjacent[0], adjacent[1])]
-
-        # def xfer(center_pos, adjacent_pos, delta):
-        #     self.water[center_pos[0]][center_pos[1]] -= delta
-        #     self.water[adjacent_pos[0]][adjacent_pos[1]] += delta
-
-        # xfer(pos, adjacent, xfer_coefficient*max_water_xfer)
-
-        # possibilities = [xfer_constant, xfer_coefficient*center_water]
-
-        # if delta > max(possibilities):
-        #     xfer(pos, adjacent, max(possibilities))
-        # else:
-        #     xfer(pos, adjacent, delta)
-
-        # # Return XY's of effected cells
 
 
 if __name__ == "__main__":

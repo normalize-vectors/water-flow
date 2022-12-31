@@ -26,7 +26,6 @@ seed(a=1)
 def main():
 
     def draw_cell(coordinate):
-        """Draw the cell at coordinate. Assigns a color based on presence of water and height."""
 
         x, y = coordinate
 
@@ -37,14 +36,13 @@ def main():
         C_WATER = (0, 82, 198)
 
         def f(h): return min((9*h/1100) + 0.02, 1)
-        def g(z): return max(min((-9*z/100) + 1, 1), 0.1)
+        def g(z): return max(min((-3*z/100) + 1, 1), 0.4)
 
         if world.water[x][y] > 0:
             z = world.water[x][y]
-            # mod = g(z)
             h = world.height(x, y)
-            mod = 0.5*g(z) + 0.5*f(h)
-            # mod = f(h)
+            # mod = 0.5*g(z) + 0.5*f(h)
+            mod = f(h)
             color = (int(C_WATER[0]*mod), int(C_WATER[1])*mod, int(C_WATER[2]*mod))
         else:
             h = world.ground_display[x][y]
@@ -61,71 +59,8 @@ def main():
         # return the rect that was drawn
         return pygame.draw.rect(screen, color, cell_rect)
 
-    def draw_ground():
-        """Draw every ground cell to the screen"""
-        for x in range(world.size[0]):
-            for y in range(world.size[1]):
-
-                draw_cell((x, y))
-
-    def update():
-        """Calls water_movement and manages redrawing of water cells. Returns a list of cells that need to be redrawn."""
-
-        def find_water():
-            water_cells = []
-
-            for x in range(world.size[0]):
-                for y in range(world.size[1]):
-                    z = world.water[x][y]
-                    if z > 0:
-                        water_cells.append((x, y, z))
-            return water_cells
-
-        water_cells = find_water()
-
-        cells_to_redraw = []
-
-        shuffle(water_cells)
-        for cell in water_cells:
-            cells_to_redraw += world.water_movement((cell[0], cell[1]))
-
-        rects_to_update = []
-
-        # set() returns the unique values in cells_to_redraw, so no cell should be redrawn twice
-        for cell in set(cells_to_redraw):
-            if cell == None:
-                continue
-            else:
-                rects_to_update.append(draw_cell(cell))
-
-        return rects_to_update
-
-    def show_coordinate():
-        """The mouse pointer's coordinate."""
-        font = pygame.font.SysFont('Consolas', 20)
-        mouse = pygame.mouse.get_pos()
-        coord = (mouse[0]//world.cell_width, mouse[1]//world.cell_width)
-        c = f"({coord[0]},{coord[1]})".ljust(9)
-        ground = str(round(world.ground[coord[0]][coord[1]], 2)).ljust(6)
-        water = str(round(world.water[coord[0]][coord[1]], 2)).ljust(6)
-        height = str(round(world.height(coord[0], coord[1]), 2)).ljust(6)
-        fps = str(round(clock.get_fps(), 1))
-        string = f"{c} Gnd:{ground} Wtr:{water} Hgt:{height} Fps:{fps}"
-
-        text = font.render(string, True, (0, 0, 0), (255, 255, 255))
-        return screen.blit(text, (10, 10))
-
-    def place_water():
-        """Place down water at the mouse position"""
-        mouse = pygame.mouse.get_pos()
-        coord = (mouse[0]//world.cell_width, mouse[1]//world.cell_width)
-        world.water[coord[0]][coord[1]] += 1
-
-    # ===========================
-
     pygame.init()
 
-    # Set the size of the display window
     screen = pygame.display.set_mode(
         (
             world.cell_width * world.size[0],
@@ -133,7 +68,12 @@ def main():
         )
     )
 
-    draw_ground()
+    # Draw every ground cell to the screen
+    for x in range(world.size[0]):
+        for y in range(world.size[1]):
+            z = world.ground[x][y]
+
+            draw_cell((x, y))
 
     # Flip is used since it will need to update every pixel on the screen
     pygame.display.flip()
@@ -142,7 +82,17 @@ def main():
 
     clock = pygame.time.Clock()
 
-    # ===========================
+    def show_coordinate():
+        # The mouse pointer's coordinate
+        font = pygame.font.Font('freesansbold.ttf', 20)
+        mouse = pygame.mouse.get_pos()
+        coord = (mouse[0]//world.cell_width, mouse[1]//world.cell_width)
+        text = font.render(
+            f"({coord[0]},{coord[1]}) Ground:{round(world.ground[coord[0]][coord[1]],2)} Water:{round(world.water[coord[0]][coord[1]],2)}",
+            True,
+            (0, 0, 0),
+            (255, 255, 255))
+        return screen.blit(text, (10, 10))
 
     while running:
 
@@ -155,13 +105,38 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 # if left mouse button pressed
                 if event.button == 1:
-                    place_water()
+                    mouse = pygame.mouse.get_pos()
+                    coord = (mouse[0]//world.cell_width, mouse[1]//world.cell_width)
+                    world.water[coord[0]][coord[1]] += 1
 
-        rects = update()
+        cells_to_redraw = []
 
-        rects.append(show_coordinate())
+        # Put code here that would change cells
+        water_cells = []
 
+        for x in range(world.size[0]):
+            for y in range(world.size[1]):
+                z = world.water[x][y]
+                if z > 0:
+                    water_cells.append((x, y, z))
+
+        shuffle(water_cells)
+        for cell in water_cells:
+            cells_to_redraw += world.water_movement((cell[0], cell[1]))
+
+        rects_to_update = []
+
+        # Using set() means that no cell should be redrawn twice
+        for cell in set(cells_to_redraw):
+            if cell == None:
+                continue
+            else:
+                rects_to_update.append(draw_cell(cell))
+
+        print(f"{round(clock.get_fps(),1)} fps")
         clock.tick(60)
+
+        rects_to_update.append(show_coordinate())
 
         # # TODO - Test what effect, if any, this has on performance
         # if len(rects_to_update) == 0:
@@ -170,7 +145,7 @@ def main():
         # Update is used since not every pixel needs to be updated,
         # only those which we have tracked
         # TODO - Test whether this is what was improving performance
-        pygame.display.update(rects)
+        pygame.display.update(rects_to_update)
 
 
 if __name__ == "__main__":
