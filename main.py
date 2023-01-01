@@ -4,6 +4,8 @@
 from world import World
 import pygame
 from random import shuffle, seed
+from threading import Thread
+import time
 
 seed(a=1)
 # TODO list
@@ -11,21 +13,20 @@ seed(a=1)
 # GUI panel at top/bottom/side
 # display mode that shows JUST height
 # only start physics on button press
-# water needs to prefer going downhill // DONE
-# -- when picking which direction to go down, ideally it would pick the lowest side
+# -- when picking which direction to go down, ideally it would pick the lowest side // halfDONE
 # water neeeds to prefer being in groups
-# investigate multithreading
+"# investigate multithreading"
 # momentum
 # -- complex: water could build momentum going down a hill only to splash against a wall and climb up it
 # -- simple: mechanic where if a water successfully does a scenario 3, then if the next cell is shorter, then it simply
 # -- teleports to that one, this would be scenario 4, ty auri :)
-# better terrain generator - Specify top/bottom heights desired
-# try adding diagonals to coordinates in adjacent_less_than // DONE
-# investigate chunking system and maybe infinite worlds
+"# better terrain generator - Specify top/bottom heights desired"
+# try adding diagonals to coordinates in adjacent_less_than // halfDONE
+"# investigate chunking system and maybe infinite worlds"
 # make the water more transparent while there is less of it.
 # -- and also make the water more transparent when it is moving slower (so faster is more white so it's like foaming or smth)
 # -- this would be a good way to show the water's momentum
-
+# investigate the problem of diagonals interacting with downhill preference
 
 def main():
 
@@ -90,8 +91,25 @@ def main():
         cells_to_redraw = []
 
         shuffle(water_cells)
+
+        # Create a list to store the results
+        results = []
+
+        # Create a thread for each call to water_movement
+        threads = []
         for cell in water_cells:
-            cells_to_redraw += world.water_movement((cell[0], cell[1]))
+            thread = Thread(target=world.water_movement, args=(cell[0],cell[1]))
+            thread.start()
+            threads.append(thread)
+
+        # Wait for all threads to complete
+        for thread in threads:
+            result = thread.join()  # Wait for the thread to complete and return the result
+            # Append the result to the results list
+            results.append(result)
+
+        # Add the results to the cells_to_redraw list
+        cells_to_redraw += [result for result in results if result is not None]
 
         rects_to_update = []
 

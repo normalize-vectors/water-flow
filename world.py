@@ -1,8 +1,9 @@
 import numpy as np
 from perlin_noise import PerlinNoise
 from random import seed, shuffle
+import threading
+import time
 seed(a=1)
-
 
 class World:
 
@@ -53,7 +54,7 @@ class World:
                     continue
                 if x + i < 0 or x + i >= self.size[0]: # Skip cells outside the board
                     continue
-                if y + j < 0 or y + j >= self.size[1]: # Skip cells outside the board
+                if y + j < 0 or y + j >= self.size[1]: # Skip cells outside the baord
                     continue
                 if self.ground[x + i][y + j] < height:
                     adjacent_cells.append((x + i, y + j, self.ground[x + i][y + j]))
@@ -90,16 +91,9 @@ class World:
         if len(adjacent_cells) == 0:
             return [None]
 
-        min_height = float('inf')
-        best_cell = None
+        shuffle(adjacent_cells)
 
-        for cell in adjacent_cells:
-            if cell[2] < min_height:
-                min_height = cell[2]
-                best_cell = cell
-
-        # water flows into the cell with the lowest height
-        adjacent = best_cell
+        adjacent = adjacent_cells[0]
 
         # Difference in height between the center cell and the adjacent
         delta = center_height - adjacent[2]
