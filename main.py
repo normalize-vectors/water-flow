@@ -91,25 +91,8 @@ def main():
         cells_to_redraw = []
 
         shuffle(water_cells)
-
-        # Create a list to store the results
-        results = []
-
-        # Create a thread for each call to water_movement
-        threads = []
         for cell in water_cells:
-            thread = Thread(target=world.water_movement, args=(cell,))
-            thread.start()
-            threads.append(thread)
-
-        # Wait for all threads to complete
-        for thread in threads:
-            result = thread.join()  # Wait for the thread to complete and return the result
-            # Append the result to the results list
-            results.append(result)
-
-        # Add the results to the cells_to_redraw list
-        cells_to_redraw += [result for result in results if result is not None]
+            cells_to_redraw += world.water_movement((cell[0], cell[1]))
 
         rects_to_update = []
 
