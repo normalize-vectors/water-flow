@@ -21,6 +21,8 @@ seed(a=1)
 # -- teleports to that one, this would be scenario 4, ty auri :)
 # better terrain generator - Specify top/bottom heights desired
 # try adding diagonals to coordinates in adjacent_less_than
+# in world.py, try moving scenario functions outside of water_movement
+# ---- Each time it runs, it has to remind itself that those functions exist, surely that's a (minor) performance loss?
 
 
 def main():
@@ -71,28 +73,26 @@ def main():
     def update():
         """Calls water_movement and manages redrawing of water cells. Returns a list of cells that need to be redrawn."""
 
-        def find_water():
-            water_cells = []
+        # def find_water():
+        #     water_cells = []
 
-            for x in range(world.size[0]):
-                for y in range(world.size[1]):
-                    z = world.water[x][y]
-                    if z > 0:
-                        water_cells.append((x, y, z))
-            return water_cells
+        #     for x in range(world.size[0]):
+        #         for y in range(world.size[1]):
+        #             z = world.water[x][y]
+        #             if z > 0:
+        #                 water_cells.append((x, y, z))
+        #     return water_cells
 
-        water_cells = find_water()
+        # water_cells = find_water()
 
         cells_to_redraw = []
 
-        shuffle(water_cells)
-        for cell in water_cells:
+        for cell in world.water_cells.copy():
             cells_to_redraw += world.water_movement((cell[0], cell[1]))
 
         rects_to_update = []
 
-        # set() returns the unique values in cells_to_redraw, so no cell should be redrawn twice
-        for cell in set(cells_to_redraw):
+        for cell in cells_to_redraw:
             if cell == None:
                 continue
             else:
@@ -120,6 +120,8 @@ def main():
         mouse = pygame.mouse.get_pos()
         coord = (mouse[0]//world.cell_width, mouse[1]//world.cell_width)
         world.water[coord[0]][coord[1]] += 1
+        if coord not in world.water_cells:
+            world.water_cells.add(coord)
 
     # ===========================
 
@@ -152,12 +154,17 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
+                if event.key == pygame.K_LCTRL:
+                    breakpoint()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 # if left mouse button pressed
                 if event.button == 1:
                     place_water()
 
         rects = update()
+
+        # if set(world.find_water()) != world.water_cells:
+        #     breakpoint()
 
         rects.append(show_coordinate())
 

@@ -16,8 +16,11 @@ class World:
         self.ground_display = np.empty(self.size, dtype=np.float16)
         self.water = np.zeros(self.size, dtype=np.float16)
 
-        # self.ground = np.empty(self.size, dtype=np.float64)
-        # self.water = np.zeros(self.size, dtype=np.float64)
+        self.water_cells = set()
+
+        self.i = 0  # debug
+
+        self.log = []
 
         noise1 = PerlinNoise(octaves=2, seed=69)
         noise2 = PerlinNoise(octaves=8, seed=420)
@@ -41,6 +44,13 @@ class World:
         self.ground += abs(self.ground.min())*1.5
         # TODO this is inefficient, redo after color stuff is better
         self.ground_display += abs(self.ground_display.min())*1.5
+
+    def water_cells_debug(self, appendage):
+        self.water_cells.append(appendage)
+        if appendage == (1, 5):
+            self.log.append(self.i)
+        if len([cell for cell in self.water_cells if self.water_cells.count(cell) > 1]) > 0:
+            breakpoint()
 
     def height(self, x, y):
         """Returns the height of the coordinate x,y. Height = height of ground + height of water"""
@@ -66,6 +76,17 @@ class World:
                 to_return.append((X, Y, height))
         return to_return
 
+    def find_water(self):
+        """Returns a list of every water pixel on the map. Very slow."""
+        water_cells = []
+
+        for x in range(self.size[0]):
+            for y in range(self.size[1]):
+                z = self.water[x][y]
+                if z > 0:
+                    water_cells.append((x, y))
+        return water_cells
+
     def water_movement(self, pos):
         """Transfer water from pos to one adjacent cell. Assumes that water only 
         flows due to a difference in height. Returns the XY coordinates of cells
@@ -78,6 +99,8 @@ class World:
         center_height = self.height(x, y)
         center_ground = self.ground[x][y]
         center_water = self.water[x][y]
+
+        self.i += 1  # Debug
 
         # A list of XYZ that water will flow to
         adjacent_cells = self.adjacent_less_than((x, y), center_height)
@@ -100,40 +123,51 @@ class World:
 
         def cohesive_xfer(xfer):
             self.water[x][y] = 0
+            self.water_cells.remove((x, y))
             self.water[adjacent[0]][adjacent[1]] += xfer
-            # TODO remove x,y from water_cells
 
-        if center_ground > adjacent[2]:
+        def scenario_1_2():
+            # Handles resolution of scenarios 1 and 2
+
+            average_height = (center_height+adjacent[2])/2
+
+            # This is the amount of water that will be necessary to give the two cells the same height
+            xfer_to_balance = average_height - adjacent[2]
+
+            self.water[x][y] -= xfer_to_balance
+            self.water[adjacent[0]][adjacent[1]] += xfer_to_balance
+
+            # This is a deprecated implementation of cohesive_xfer for scenarios 1 and 2
+            # It is interesting, but not very water like. Makes the water too cohesive to be water
+            # if water_xfer_to_balance < cohesion_constant:
+            #     cohesive_xfer(center_water)
+            # else:
+            #     self.water[x][y] -= water_xfer_to_balance
+            #     self.water[adjacent[0]][adjacent[1]] += water_xfer_to_balance
+
+        def scenario_3():
+            # Handles resolution of scenario 3
+            if max_water_xfer < cohesion_constant:
+                xfer = max_water_xfer
+                cohesive_xfer(xfer)
+            else:
+                xfer = max_water_xfer*xfer_coefficient
+                self.water[x][y] -= xfer
+                self.water[adjacent[0]][adjacent[1]] += xfer
+
+        if center_ground >= adjacent[2]:
             max_water_xfer = center_water
-            if delta > max_water_xfer:  # Scenario 3
+            if delta >= max_water_xfer:  # Scenario 3
+                scenario_3()
+            else:
+                scenario_1_2()  # Scenario 2
+        else:
+            scenario_1_2()  # Scenario 1
 
-                if max_water_xfer < cohesion_constant:
-                    xfer = max_water_xfer
-                    cohesive_xfer(xfer)
-                else:
-                    xfer = max_water_xfer*xfer_coefficient
-                    self.water[x][y] -= xfer
-                    self.water[adjacent[0]][adjacent[1]] += xfer
-
-                return [pos, (adjacent[0], adjacent[1])]
-
-        # Scenarios 1 & 2
-        average_height = (center_height+adjacent[2])/2
-
-        # This is the amount of water that will be necessary to give the two cells the same height
-        water_xfer_to_balance = average_height - adjacent[2]
-
-        self.water[x][y] -= water_xfer_to_balance
-        self.water[adjacent[0]][adjacent[1]] += water_xfer_to_balance
-
-        # Adding cohesive_xfers for scenarios 1 & 2 is interesting, but not very water-like
-        # if water_xfer_to_balance < cohesion_constant:
-        #     cohesive_xfer(center_water)
-        # else:
-        #     self.water[x][y] -= water_xfer_to_balance
-        #     self.water[adjacent[0]][adjacent[1]] += water_xfer_to_balance
-
-        # TODO add adjacent to water_cells
+        # Add the adjacent cell to the list of water_cells if it has water.
+        # This must be done at the very end, since it is possible for no water to be xfer'd under certain conditions.
+        if self.water[adjacent[0]][adjacent[1]] != 0:
+            self.water_cells.add((adjacent[0], adjacent[1]))
 
         # Return XY's of effected cells
         return [pos, (adjacent[0], adjacent[1])]
@@ -141,7 +175,27 @@ class World:
 
 if __name__ == "__main__":
     world = World()
-    plt.imshow(world.ground, cmap='gray')
+
+    def find_water():
+        water_cells = []
+
+        for x in range(world.size[0]):
+            for y in range(world.size[1]):
+                z = world.water[x][y]
+                if z > 0:
+                    water_cells.append((x, y))
+        return water_cells
+
+    world.water[7][7] = 100
+    world.water_cells.append((7, 7))
+
+    for i in range(1000):
+        for cell in world.water_cells.copy():
+            world.water_movement((cell[0], cell[1]))
+        true_water = find_water()
+        if true_water.sort() != world.water_cells.sort():
+            # except if the new water method is not returning accurate results
+            breakpoint()
 
     # world.ground[25][40] += 100
     # world.water[25][40] = 10
