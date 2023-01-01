@@ -8,7 +8,7 @@ class World:
 
     def __init__(self):
         self.cell_width = 6  # How many pixels wide each cell will appear
-        self.size = (150, 150)  # Defines the shape of the board
+        self.size = (100,100)  # Defines the shape of the board
 
         self.ground = np.empty(self.size, dtype=np.float16)
         self.ground_display = np.empty(self.size, dtype=np.float16)
@@ -44,25 +44,20 @@ class World:
         """Returns the height of the coordinate x,y. Height = height of ground + height of water"""
         return self.ground[x][y] + self.water[x][y]
 
-    def adjacent_less_than(self, pos, reference_height):
-        """Returns all cells adjacent to pos that are shorter than reference height."""
-
-        x, y = pos
-
-        coordinates = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
-        to_return = []
-        for coord in coordinates:
-            X, Y = coord
-            # Check if the coordinate of interest is inside the grid
-            if (0 <= X <= self.size[0]-1) and (0 <= Y <= self.size[0]-1):
-                height = self.height(X, Y)
-
-                # Don't return this XYZ if
-                if height >= reference_height:
+    def adjacent_less_than(self, center, height):
+        x, y = center
+        adjacent_cells = []
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                if i == 0 and j == 0:  # Skip the center cell
                     continue
-
-                to_return.append((X, Y, height))
-        return to_return
+                if x + i < 0 or x + i >= self.size[0]: # Skip cells outside the board
+                    continue
+                if y + j < 0 or y + j >= self.size[1]: # Skip cells outside the board
+                    continue
+                if self.ground[x + i][y + j] < height:
+                    adjacent_cells.append((x + i, y + j, self.ground[x + i][y + j]))
+        return adjacent_cells
 
     def water_movement(self, pos):
         """Transfer water from pos to one adjacent cell. Assumes that water only 

@@ -20,7 +20,11 @@ seed(a=1)
 # -- simple: mechanic where if a water successfully does a scenario 3, then if the next cell is shorter, then it simply
 # -- teleports to that one, this would be scenario 4, ty auri :)
 # better terrain generator - Specify top/bottom heights desired
-# try adding diagonals to coordinates in adjacent_less_than
+# try adding diagonals to coordinates in adjacent_less_than - DONE
+# investigate chunking system and maybe infinite worlds
+# make the water more transparent while there is less of it.
+# -- and also make the water more transparent when it is moving slower (so faster is more white so it's like foaming or smth)
+# -- this would be a good way to show the water's momentum
 
 
 def main():
@@ -119,7 +123,7 @@ def main():
         """Place down water at the mouse position"""
         mouse = pygame.mouse.get_pos()
         coord = (mouse[0]//world.cell_width, mouse[1]//world.cell_width)
-        world.water[coord[0]][coord[1]] += 1
+        world.water[coord[0]][coord[1]] += 100
 
     # ===========================
 
