@@ -16,12 +16,6 @@ class World:
         self.ground_display = np.empty(self.size, dtype=np.float16)
         self.water = np.zeros(self.size, dtype=np.float16)
 
-        self.water_cells = set()
-
-        self.i = 0  # debug
-
-        self.log = []
-
         noise1 = PerlinNoise(octaves=2, seed=69)
         noise2 = PerlinNoise(octaves=8, seed=420)
         noise3 = PerlinNoise(octaves=16, seed=46)
@@ -70,7 +64,8 @@ class World:
         return to_return
 
     def find_water(self):
-        """Returns a list of every water pixel on the map. Slow."""
+        """Returns a list of every water pixel on the map. Very slow."""
+
         return np.argwhere(world.water)
 
     def water_movement(self, pos):
@@ -109,7 +104,6 @@ class World:
 
         def cohesive_xfer(xfer):
             self.water[x][y] = 0
-            self.water_cells.remove((x, y))
             self.water[adjacent[0]][adjacent[1]] += xfer
 
         def scenario_1_2():
@@ -149,11 +143,6 @@ class World:
                 scenario_1_2()  # Scenario 2
         else:
             scenario_1_2()  # Scenario 1
-
-        # Add the adjacent cell to the list of water_cells if it has water.
-        # This must be done at the very end, since it is possible for no water to be xfer'd under certain conditions.
-        if self.water[adjacent[0]][adjacent[1]] != 0:
-            self.water_cells.add((adjacent[0], adjacent[1]))
 
         # Return XY's of effected cells
         return [pos, (adjacent[0], adjacent[1])]

@@ -15,6 +15,7 @@ seed(a=1)
 # -- when picking which direction to go down, ideally it would pick the lowest side
 # water neeeds to prefer being in groups
 # investigate multithreading
+# --- multithreading with NumPy: page 1880 https://numpy.org/doc/1.23/numpy-ref.pdf
 # momentum
 # -- complex: water could build momentum going down a hill only to splash against a wall and climb up it
 # -- simple: mechanic where if a water successfully does a scenario 3, then if the next cell is shorter, then it simply
@@ -23,6 +24,7 @@ seed(a=1)
 # try adding diagonals to coordinates in adjacent_less_than
 # in world.py, try moving scenario functions outside of water_movement
 # ---- Each time it runs, it has to remind itself that those functions exist, surely that's a (minor) performance loss?
+# is there a numpy way to make adjacent_less_than faster? optimize it in general?
 
 
 def main():
@@ -72,18 +74,6 @@ def main():
 
     def update():
         """Calls water_movement and manages redrawing of water cells. Returns a list of cells that need to be redrawn."""
-
-        # def find_water():
-        #     water_cells = []
-
-        #     for x in range(world.size[0]):
-        #         for y in range(world.size[1]):
-        #             z = world.water[x][y]
-        #             if z > 0:
-        #                 water_cells.append((x, y, z))
-        #     return water_cells
-
-        # water_cells = find_water()
 
         cells_to_redraw = []
 
@@ -144,6 +134,8 @@ def main():
 
     clock = pygame.time.Clock()
 
+    frame_count = 0
+
     # ===========================
 
     while running:
@@ -178,6 +170,8 @@ def main():
         # only those which we have tracked
         # TODO - Test whether this is what was improving performance
         pygame.display.update(rects)
+
+        frame_count += 1
 
 
 if __name__ == "__main__":

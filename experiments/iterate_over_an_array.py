@@ -1,24 +1,26 @@
 import numpy as np
 import time
 
-# Method 1
-arraya = np.empty((5000, 5000), dtype=np.float16)
 
+# Method 1
+la = []
+arraya = np.arange(150*150).reshape(150, 150)
 start = time.time()
-for row in arraya:
-    for cell in row:
-        a = cell
-        cell = 1
+it = np.nditer(arraya, flags=['multi_index'])
+for x in it:
+    if x > 10000:
+        la.append(it.multi_index)
 stop = time.time()
 print(stop - start)
 
 # Method 2
-arrayb = np.empty((5000, 5000), dtype=np.float16)
+lb = []
+arrayb = np.arange(150*150).reshape(150, 150)
 
 start = time.time()
-for i in range(5000):
-    for j in range(5000):
-        a = arrayb[i][j]
-        arrayb[i][j] = 1
+for i in range(150):
+    for j in range(150):
+        if arrayb[i][j] > 10000:
+            lb.append((i, j))
 stop = time.time()
 print(stop - start)
