@@ -98,7 +98,7 @@ def main():
         # Create a thread for each call to water_movement
         threads = []
         for cell in water_cells:
-            thread = Thread(target=world.water_movement, args=(cell[0],cell[1]))
+            thread = Thread(target=world.water_movement, args=(cell,))
             thread.start()
             threads.append(thread)
 
