@@ -16,6 +16,9 @@ class World:
         self.ground_display = np.empty(self.size, dtype=np.float16)
         self.water = np.zeros(self.size, dtype=np.float16)
 
+        self.ground_color = {}
+        self.water_color = {}
+
         self.water_cells = set()
 
         self.i = 0  # debug

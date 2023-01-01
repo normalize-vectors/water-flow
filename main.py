@@ -45,14 +45,36 @@ def main():
 
         if world.water[x][y] > 0:
             z = world.water[x][y]
-            # mod = g(z)
+
+            if z in world.water_color.keys():
+                mod1 = world.water_color[z]
+            else:
+                world.water_color[z] = g(z)
+                mod1 = world.water_color[z]
+
             h = world.height(x, y)
-            mod = 0.5*g(z) + 0.5*f(h)
+
+            if h in world.ground_color.keys():
+                mod2 = world.ground_color[h]
+            else:
+                world.ground_color[h] = f(h)
+                mod2 = world.ground_color[h]
+
+            mod = 0.5*mod1 + 0.5*mod2
             # mod = f(h)
             color = (int(C_WATER[0]*mod), int(C_WATER[1])*mod, int(C_WATER[2]*mod))
         else:
             h = world.ground_display[x][y]
-            mod = f(h)
+
+            if h in world.ground_color.keys():
+                mod = world.ground_color[h]
+            else:
+                world.ground_color[h] = f(h)
+                mod = world.ground_color[h]
+
+            # h = world.ground_display[x][y]
+            # mod = world.ground_color.get(h, f(h))
+            # # mod = f(h)
             color = (int(C_GROUND[0]*mod), int(C_GROUND[1]*mod), int(C_GROUND[2]*mod))
 
         cell_rect = (
