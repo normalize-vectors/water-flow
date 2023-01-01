@@ -11,7 +11,7 @@ seed(a=1)
 # GUI panel at top/bottom/side
 # display mode that shows JUST height
 # only start physics on button press
-# water needs to prefer going downhill
+# water needs to prefer going downhill // DONE
 # -- when picking which direction to go down, ideally it would pick the lowest side
 # water neeeds to prefer being in groups
 # investigate multithreading
@@ -20,7 +20,7 @@ seed(a=1)
 # -- simple: mechanic where if a water successfully does a scenario 3, then if the next cell is shorter, then it simply
 # -- teleports to that one, this would be scenario 4, ty auri :)
 # better terrain generator - Specify top/bottom heights desired
-# try adding diagonals to coordinates in adjacent_less_than - DONE
+# try adding diagonals to coordinates in adjacent_less_than // DONE
 # investigate chunking system and maybe infinite worlds
 # make the water more transparent while there is less of it.
 # -- and also make the water more transparent when it is moving slower (so faster is more white so it's like foaming or smth)

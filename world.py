@@ -90,9 +90,16 @@ class World:
         if len(adjacent_cells) == 0:
             return [None]
 
-        shuffle(adjacent_cells)
+        min_height = float('inf')
+        best_cell = None
 
-        adjacent = adjacent_cells[0]
+        for cell in adjacent_cells:
+            if cell[2] < min_height:
+                min_height = cell[2]
+                best_cell = cell
+
+        # water flows into the cell with the lowest height
+        adjacent = best_cell
 
         # Difference in height between the center cell and the adjacent
         delta = center_height - adjacent[2]
