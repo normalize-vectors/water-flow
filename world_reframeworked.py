@@ -9,6 +9,7 @@ class World:
     def __init__(self):
         self.cell_width = 6  # How many pixels wide each cell will appear
         self.size = (100,100)  # Defines the shape of the board
+        self.chunk_size = 64
 
         self.water = np.zeros(self.size, dtype=np.float16)
         self.step_factor = 0.4
@@ -25,6 +26,8 @@ class World:
         stop = time.time()
         del a
         print(stop-start)
+
+        self.chunk_count = self.size/self.chunk_size
 
     def gen_row(self, x):
         row = []
