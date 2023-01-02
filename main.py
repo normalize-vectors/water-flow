@@ -3,9 +3,7 @@
 # from terrain_generator_cython import World
 from world import World
 import pygame
-from random import shuffle, seed
 
-seed(a=1)
 # TODO list
 # better coloration
 # GUI panel at top/bottom/side
@@ -25,6 +23,13 @@ seed(a=1)
 # in world.py, try moving scenario functions outside of water_movement
 # ---- Each time it runs, it has to remind itself that those functions exist, surely that's a (minor) performance loss?
 # is there a numpy way to make adjacent_less_than faster? optimize it in general?
+# potential cheat to improve performance: update 1/2 of water cells per frame
+# What is this? https://moderngl.readthedocs.io/en/latest/
+# What is this? https://github.com/mcpalmer1980/renderpyg
+# What is this? https://gamedev.stackexchange.com/questions/73328/how-do-i-get-hardware-accelerated-graphics-and-shaders-in-pygame
+# What is this? https://api.arcade.academy/en/latest/
+# What is this? https://pyglet.readthedocs.io/en/latest/
+# xfer coefficient dependent on delta? Water would slow faster down a larger slope...?
 
 
 def main():
@@ -44,7 +49,7 @@ def main():
         def g(z): return max(min((-9*z/100) + 1, 1), 0.1)
 
         if world.water[x][y] > 0:
-            z = world.water[x][y]
+            z = world.water[x, y]
 
             if z in world.water_color.keys():
                 mod1 = world.water_color[z]
@@ -64,7 +69,7 @@ def main():
             # mod = f(h)
             color = (int(C_WATER[0]*mod), int(C_WATER[1])*mod, int(C_WATER[2]*mod))
         else:
-            h = world.ground_display[x][y]
+            h = world.ground_display[x, y]
 
             if h in world.ground_color.keys():
                 mod = world.ground_color[h]
@@ -158,6 +163,8 @@ def main():
 
     frame_count = 0
 
+    mouse_pressed = False
+
     # ===========================
 
     while running:
@@ -170,10 +177,17 @@ def main():
                     running = False
                 if event.key == pygame.K_LCTRL:
                     breakpoint()
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.type == pygame.MOUSEBUTTONUP:
                 # if left mouse button pressed
                 if event.button == 1:
-                    place_water()
+                    mouse_pressed = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # if left mouse button unpressed
+                if event.button == 1:
+                    mouse_pressed = True
+
+        if mouse_pressed:
+            place_water()
 
         rects = update()
 

@@ -1,7 +1,7 @@
 import numpy as np
 from perlin_noise import PerlinNoise
-import matplotlib.pyplot as plt
 from random import seed, shuffle
+from multiprocessing import Pool
 
 seed(a=1)
 
@@ -9,48 +9,46 @@ seed(a=1)
 class World:
 
     def __init__(self):
-        self.cell_width = 6  # How many pixels wide each cell will appear
-        self.size = (150, 150)  # Defines the shape of the board
+        self.cell_width = 8  # How many pixels wide each cell will appear
+        self.size = (100, 100)  # Defines the shape of the board
 
-        self.ground = np.empty(self.size, dtype=np.float16)
-        self.ground_display = np.empty(self.size, dtype=np.float16)
         self.water = np.zeros(self.size, dtype=np.float16)
 
+        self.step_factor = 0.4  # Determines how the ground_display matrix is rounded
+
+        # Noise objects used for world generation
+        self.noise1 = PerlinNoise(2, 71)
+        self.noise2 = PerlinNoise(6, 81)
+        self.noise3 = PerlinNoise(16, 91)
+
+        self.terrain_generation()  # Creates and populates self.ground and self.ground_display
+
+        # Dictionaries of color values populated by main
         self.ground_color = {}
         self.water_color = {}
 
         self.water_cells = set()
 
-        self.i = 0  # debug
+    def _gen_row(self, x):
+        row = []
+        display_row = []
+        for y in range(self.size[1]):
+            z = 100*self.noise1((x/self.size[0], y/self.size[1])) + 40*self.noise2((x, y)) + 5*self.noise3((x, y)) + 50
+            h = round(self.step_factor*z)/self.step_factor
+            row.append(z)
+            display_row.append(h)
+        return row + display_row
 
-        self.log = []
-
-        noise1 = PerlinNoise(octaves=2, seed=69)
-        noise2 = PerlinNoise(octaves=8, seed=420)
-        noise3 = PerlinNoise(octaves=16, seed=46)
-        noise4 = PerlinNoise(octaves=32, seed=62)
-
-        step_factor = 0.4
-
-        for x in range(self.size[0]):
-            for y in range(self.size[1]):
-                noise_coordinate = [x/self.size[0], y/self.size[1]]
-
-                self.ground[x][y] = 100*noise1(noise_coordinate)
-                self.ground[x][y] += 20*noise2(noise_coordinate)
-                self.ground[x][y] += 5*noise3(noise_coordinate)
-                self.ground[x][y] += 2*noise4(noise_coordinate)
-                # self.ground[x][y] = round(step_factor*self.ground[x][y])/step_factor
-                self.ground_display[x][y] = round(step_factor*self.ground[x][y])/step_factor
-
-        # Assure that there are only positive values in self.ground
-        self.ground += abs(self.ground.min())*1.5
-        # TODO this is inefficient, redo after color stuff is better
-        self.ground_display += abs(self.ground_display.min())*1.5
+    def terrain_generation(self):
+        # More processes doesn't necessarily seem to the generation faster
+        with Pool(processes=8) as pool:
+            f = pool.map(self._gen_row, range(self.size[0]))
+        a = np.array(f, dtype=np.float16)
+        self.ground, self.ground_display = np.split(a, 2, axis=1)
 
     def height(self, x, y):
         """Returns the height of the coordinate x,y. Height = height of ground + height of water"""
-        return self.ground[x][y] + self.water[x][y]
+        return self.ground[x, y] + self.water[x, y]
 
     def adjacent_less_than(self, pos, reference_height):
         """Returns all cells adjacent to pos that are shorter than reference height."""
@@ -77,7 +75,7 @@ class World:
         return np.argwhere(world.water)
 
     def water_movement(self, pos):
-        """Transfer water from pos to one adjacent cell. Assumes that water only 
+        """Transfer water from pos to one adjacent cell. Assumes that water only
         flows due to a difference in height. Returns the XY coordinates of cells
         that were modified."""
 
@@ -86,10 +84,8 @@ class World:
         # Information about the cell of water that is doing the moving
         x, y = pos
         center_height = self.height(x, y)
-        center_ground = self.ground[x][y]
-        center_water = self.water[x][y]
-
-        self.i += 1  # Debug
+        center_ground = self.ground[x, y]
+        center_water = self.water[x, y]
 
         # A list of XYZ that water will flow to
         adjacent_cells = self.adjacent_less_than((x, y), center_height)
@@ -111,9 +107,9 @@ class World:
         cohesion_constant = 0.01
 
         def cohesive_xfer(xfer):
-            self.water[x][y] = 0
+            self.water[x, y] = 0
             self.water_cells.remove((x, y))
-            self.water[adjacent[0]][adjacent[1]] += xfer
+            self.water[adjacent[0], adjacent[1]] += xfer
 
         def scenario_1_2():
             # Handles resolution of scenarios 1 and 2
@@ -123,8 +119,8 @@ class World:
             # This is the amount of water that will be necessary to give the two cells the same height
             xfer_to_balance = average_height - adjacent[2]
 
-            self.water[x][y] -= xfer_to_balance
-            self.water[adjacent[0]][adjacent[1]] += xfer_to_balance
+            self.water[x, y] -= xfer_to_balance
+            self.water[adjacent[0], adjacent[1]] += xfer_to_balance
 
             # This is a deprecated implementation of cohesive_xfer for scenarios 1 and 2
             # It is interesting, but not very water like. Makes the water too cohesive to be water
@@ -141,8 +137,8 @@ class World:
                 cohesive_xfer(xfer)
             else:
                 xfer = max_water_xfer*xfer_coefficient
-                self.water[x][y] -= xfer
-                self.water[adjacent[0]][adjacent[1]] += xfer
+                self.water[x, y] -= xfer
+                self.water[adjacent[0], adjacent[1]] += xfer
 
         if center_ground >= adjacent[2]:
             max_water_xfer = center_water
@@ -155,7 +151,7 @@ class World:
 
         # Add the adjacent cell to the list of water_cells if it has water.
         # This must be done at the very end, since it is possible for no water to be xfer'd under certain conditions.
-        if self.water[adjacent[0]][adjacent[1]] != 0:
+        if self.water[adjacent[0], adjacent[1]] != 0:
             self.water_cells.add((adjacent[0], adjacent[1]))
 
         # Return XY's of effected cells
