@@ -1,7 +1,7 @@
 # https://dr0id.bitbucket.io/legacy/pygame_tutorial00.html
 
 # from terrain_generator_cython import World
-from world import World
+from world_reframeworked import World
 import pygame
 from random import shuffle, seed
 from threading import Thread
