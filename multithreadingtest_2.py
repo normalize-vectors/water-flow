@@ -45,6 +45,6 @@ class World:
         a = np.array(f, dtype=np.float16)
         ground, ground_display = np.split(a, 2, axis=1)
         stop = time.time()
-        print("World Generation Time: "+stop-start)
+        print("World Generation Time: "+str(stop-start))
         return ground, ground_display
     #------------------------------------------------------------
