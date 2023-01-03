@@ -16,9 +16,9 @@ class World:
         self.step_factor = 0.4  # Determines how the ground_display matrix is rounded
 
         # Noise objects used for world generation
-        self.noise1 = PerlinNoise(1, 71)
-        self.noise2 = PerlinNoise(8, 81)
-        self.noise3 = PerlinNoise(24, 91)
+        self.noise1 = PerlinNoise(randrange(1, 4), randrange(100))
+        self.noise2 = PerlinNoise(randrange(8, 16), randrange(100))
+        self.noise3 = PerlinNoise(randrange(24, 32), randrange(100))
 
         self.terrain_generation()  # Creates and populates self.ground and self.ground_display
 
@@ -106,10 +106,10 @@ class World:
         # Difference in height between the center cell and the adjacent
         delta = center_height - adjacent[2]
 
-        xfer_coefficient = 0.8
+        xfer_coefficient = 0.95
 
         # If the amount of water that would be left behind is smaller than this, then all water will be moved
-        cohesion_constant = 0.01
+        cohesion_constant = 0.1
 
         def cohesive_xfer(xfer):
             self.water[x, y] = 0

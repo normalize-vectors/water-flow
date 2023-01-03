@@ -14,9 +14,8 @@ in world.py, try moving scenario functions outside of water_movement
 ---- Each time it runs, it has to remind itself that those functions exist, surely that's a (minor) performance loss?
 is there a numpy way to make adjacent_less_than faster? optimize it in general?
 potential cheat to improve performance: update 1/2 of water cells per frame
-xfer coefficient dependent on delta? Water would slow faster down a larger slope...?
+Make xfer coefficient dependent on delta? 
 Is there a more efficient array type than numpy? Accesing them seems to be taking a lot of time
-Colors seem off
 If a water cell couldn't move this frame, add it to a list so that it won't try to mvoe next frame, either
 """
 from world import World
@@ -30,7 +29,7 @@ CELL_WIDTH = 5
 CELL_HEIGHT = 5
 CELL_MARGIN = 0
 
-TOP_MARGIN = 40
+TOP_MARGIN = 30
 SCREEN_WIDTH = (CELL_WIDTH + CELL_MARGIN) * GRID_WIDTH
 SCREEN_HEIGHT = (CELL_HEIGHT + CELL_MARGIN) * GRID_HEIGHT + TOP_MARGIN
 SCREEN_TITLE = "Water Flow"
@@ -44,23 +43,38 @@ class Color_Mapper():
 
     def __init__(self):
         # Find the min and max height of the world for color interpolation.
-        self.height_min = world.ground_display.min()*0.8
-        self.height_max = world.ground_display.max()*1.2
+        self.height_min = world.ground_display.min()*1
+        self.height_max = world.ground_display.max()*1
 
-        # Value for RGB of highest/lowest ground point on the map
-        # Only built for greyscale ground.
-        self.ground_color_max = (255, 255, 255)
-        self.ground_color_min = (40, 40, 40)
+        # RGB value of highest (max) and lowest (min) ground point on the map
+        self.ground_color_max = (239, 215, 203)  # (255, 255, 255)
+        self.ground_color_min = (61, 55, 52)  # (40, 40, 40)
 
-        self.__ground__ = Interpolate(
+        # RGB value of highest (max) and lowest (min) water point on the map
+        self.water_color_max = (18, 100, 158)
+        self.water_color_min = (63, 172, 255)
+
+        # Interpolation objects that will be used to interpolate the ground and water colors
+        self.__ground_R__ = Interpolate(
             x2=self.height_max,
             x1=self.height_min,
             y2=self.ground_color_max[0],
             y1=self.ground_color_min[0]
         )
 
-        self.water_color_max = (18, 100, 158)
-        self.water_color_min = (63, 172, 255)
+        self.__ground_G__ = Interpolate(
+            x2=self.height_max,
+            x1=self.height_min,
+            y2=self.ground_color_max[1],
+            y1=self.ground_color_min[1]
+        )
+
+        self.__ground_B__ = Interpolate(
+            x2=self.height_max,
+            x1=self.height_min,
+            y2=self.ground_color_max[2],
+            y1=self.ground_color_min[2]
+        )
 
         self.__water_R__ = Interpolate(
             x2=30,
@@ -83,7 +97,7 @@ class Color_Mapper():
             y1=self.water_color_min[2]
         )
 
-        # Dictionaries of color values as a function of heights
+        # Dictionaries of color values as a function of height
         self.ground_dict = dict()
         self.water_dict = dict()
 
@@ -93,9 +107,11 @@ class Color_Mapper():
         if h in self.ground_dict.keys():
             return self.ground_dict[h]
         else:
-            r = int(self.__ground__(h))
-            self.ground_dict[h] = (r, r, r)
-            return (r, r, r)
+            r = int(self.__ground_R__(h))
+            g = int(self.__ground_G__(h))
+            b = int(self.__ground_B__(h))
+            self.ground_dict[h] = (r, g, b)
+            return (r, g, b)
 
     def water(self, z):
         """Returns the RGB value for a water cell with height h."""
@@ -194,7 +210,8 @@ class Game(arcade.Window):
             start_x=5,
             start_y=SCREEN_HEIGHT - TOP_MARGIN + 10,
             color=color_mapper.ground_color_max,
-            font_size=20
+            font_size=14,
+            font_name='Consolas'
         )
 
     def on_draw(self):
@@ -240,7 +257,7 @@ class Game(arcade.Window):
         """UI Stuff"""
 
         # HUD
-        c = (self.mouse_x, self.mouse_y)
+        c = str((self.mouse_x, self.mouse_y)).ljust(10)
         ground = str(round(world.ground[self.mouse_x, self.mouse_y], 2)).ljust(6)
         water = str(round(world.water[self.mouse_x, self.mouse_y], 2)).ljust(6)
         height = str(round(world.height(self.mouse_x, self.mouse_y), 2)).ljust(6)
@@ -257,6 +274,7 @@ class Game(arcade.Window):
         match key:
             case 32:  # Spacebar
                 world.__init__((GRID_WIDTH, GRID_HEIGHT))
+                color_mapper.__init__()
                 self.setup()  # Reset the game
             case 65307:  # Escape
                 arcade.close_window()  # Close the game
