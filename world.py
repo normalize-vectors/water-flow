@@ -1,6 +1,6 @@
 import numpy as np
 from perlin_noise import PerlinNoise
-from random import seed, shuffle
+from random import seed, randrange
 from multiprocessing import Pool
 
 seed(a=1)
@@ -8,18 +8,17 @@ seed(a=1)
 
 class World:
 
-    def __init__(self):
-        self.cell_width = 8  # How many pixels wide each cell will appear
-        self.size = (100, 100)  # Defines the shape of the board
+    def __init__(self, size):
+        self.size = size  # Defines the shape of the board
 
         self.water = np.zeros(self.size, dtype=np.float16)
 
         self.step_factor = 0.4  # Determines how the ground_display matrix is rounded
 
         # Noise objects used for world generation
-        self.noise1 = PerlinNoise(2, 71)
-        self.noise2 = PerlinNoise(6, 81)
-        self.noise3 = PerlinNoise(16, 91)
+        self.noise1 = PerlinNoise(1, 71)
+        self.noise2 = PerlinNoise(8, 81)
+        self.noise3 = PerlinNoise(24, 91)
 
         self.terrain_generation()  # Creates and populates self.ground and self.ground_display
 
@@ -30,21 +29,28 @@ class World:
         self.water_cells = set()
 
     def _gen_row(self, x):
+        """
+        Used to generate World.ground and World.ground_display. Returns one row of each concatenated together.
+        """
         row = []
         display_row = []
         for y in range(self.size[1]):
-            z = 100*self.noise1((x/self.size[0], y/self.size[1])) + 40*self.noise2((x, y)) + 5*self.noise3((x, y)) + 50
+            z = 120*self.noise1((x/self.size[0], y/self.size[1])) + 20*self.noise2((x/self.size[0],
+                                                                                   y/self.size[1])) + 5*self.noise3((x/self.size[0], y/self.size[1])) + 50
             h = round(self.step_factor*z)/self.step_factor
             row.append(z)
             display_row.append(h)
         return row + display_row
 
     def terrain_generation(self):
-        # More processes doesn't necessarily seem to the generation faster
+        """
+        Fill World.ground and World.ground_display with height data using perlin noise and multi-processing.
+        """
+        # More processes doesn't necessarily seem to make generation faster
         with Pool(processes=8) as pool:
-            f = pool.map(self._gen_row, range(self.size[0]))
-        a = np.array(f, dtype=np.float16)
-        self.ground, self.ground_display = np.split(a, 2, axis=1)
+            data = pool.map(self._gen_row, range(self.size[0]))
+        concatenated_arrays = np.array(data, dtype=np.float16)
+        self.ground, self.ground_display = np.split(concatenated_arrays, 2, axis=1)
 
     def height(self, x, y):
         """Returns the height of the coordinate x,y. Height = height of ground + height of water"""
@@ -72,7 +78,7 @@ class World:
 
     def find_water(self):
         """Returns a list of every water pixel on the map. Slow."""
-        return np.argwhere(world.water)
+        return np.argwhere(self.water)
 
     def water_movement(self, pos):
         """Transfer water from pos to one adjacent cell. Assumes that water only
@@ -91,12 +97,11 @@ class World:
         adjacent_cells = self.adjacent_less_than((x, y), center_height)
 
         # End this function call if there are no viable adjacent cells
-        if len(adjacent_cells) == 0:
+        l = len(adjacent_cells)
+        if l == 0:
             return [None]
 
-        shuffle(adjacent_cells)
-
-        adjacent = adjacent_cells[0]
+        adjacent = adjacent_cells[randrange(l)]
 
         # Difference in height between the center cell and the adjacent
         delta = center_height - adjacent[2]
@@ -159,4 +164,4 @@ class World:
 
 
 if __name__ == "__main__":
-    world = World()
+    world = World((200, 200))
