@@ -23,19 +23,22 @@ from world import World
 import arcade
 from interpolate import Interpolate
 
+# Constants ----------------------------------------------------------
 
+# Cells:
 GRID_WIDTH = 150
 GRID_HEIGHT = 150
 CELL_WIDTH = 5
 CELL_HEIGHT = 5
 CELL_MARGIN = 0
 
+# Screen:
 TOP_MARGIN = 40
 SCREEN_WIDTH = (CELL_WIDTH + CELL_MARGIN) * GRID_WIDTH
 SCREEN_HEIGHT = (CELL_HEIGHT + CELL_MARGIN) * GRID_HEIGHT + TOP_MARGIN
 SCREEN_TITLE = "Water Flow"
 
-
+#---------------------------------------------------------------------
 class Color_Mapper():
     """
     Holds functions for calculating color of a cell as a function of height.
@@ -108,14 +111,9 @@ class Color_Mapper():
             b = int(self.__water_B__(h))
             self.water_dict[h] = (r, g, b)
             return (r, g, b)
-
-
 class Cell(arcade.SpriteSolidColor):
-    """
-    Object used to represent each grid cell. Extended from arcade.SpriteSolidColor.
-
-    """
-
+    "Object used to represent each grid cell. Extended from arcade.SpriteSolidColor."
+    # Attributes:
     def __init__(self, width: int, height: int, color: arcade.Color, grid_x: int, grid_y: int):
         super().__init__(width, height, color)
 
@@ -138,13 +136,8 @@ class Cell(arcade.SpriteSolidColor):
         else:
             # This cell has water on it.
             self.color = color_mapper.water(z)
-
-
 class Game(arcade.Window):
-    """
-    Main application class.
-    """
-
+    "Main application class."
     def __init__(self, width, height, title):
         super().__init__(width, height, title)
 
@@ -156,9 +149,7 @@ class Game(arcade.Window):
     arcade.enable_timings()
 
     def setup(self):
-        """
-        Set up the game variables. Call to re-start the game.
-        """
+        "Set up the game variables. Call to re-start the game."
         # Create your sprites and sprite lists here
 
         # One dimensional list of all sprites in the two-dimensional sprite list
@@ -287,7 +278,6 @@ class Game(arcade.Window):
         """
         if button == 1:
             self.left_click = False
-
 
 if __name__ == "__main__":
     world = World((GRID_WIDTH, GRID_HEIGHT))

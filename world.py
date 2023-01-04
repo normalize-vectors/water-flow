@@ -4,10 +4,7 @@ from random import seed, randrange
 from multiprocessing import Pool
 
 seed(a=1)
-
-
 class World:
-
     def __init__(self, size):
         self.size = size  # Defines the shape of the board
 
@@ -36,7 +33,7 @@ class World:
         display_row = []
         for y in range(self.size[1]):
             z = 120*self.noise1((x/self.size[0], y/self.size[1])) + 20*self.noise2((x/self.size[0],
-                                                                                   y/self.size[1])) + 5*self.noise3((x/self.size[0], y/self.size[1])) + 50
+            y/self.size[1])) + 5*self.noise3((x/self.size[0], y/self.size[1])) + 50
             h = round(self.step_factor*z)/self.step_factor
             row.append(z)
             display_row.append(h)
@@ -161,7 +158,6 @@ class World:
 
         # Return XY's of effected cells
         return [pos, (adjacent[0], adjacent[1])]
-
 
 if __name__ == "__main__":
     world = World((200, 200))

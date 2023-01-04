@@ -1,5 +1,4 @@
 class Interpolate():
-
     def __init__(self, x2, x1, y2, y1):
         """
         Linearly interpolate between two points. Instantiate to ready the object, then call with an x value.
@@ -41,21 +40,17 @@ class Interpolate():
         else:
             return self.y1
 
-
 if __name__ == "__main__":
-
     r = Interpolate(
         x2=30,
         x1=0,
         y2=255,
         y1=0
     )
-
     b = Interpolate(
         x2=30,
         x1=0,
         y2=0,
         y1=255
     )
-
     print(b(31))
