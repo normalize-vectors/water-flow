@@ -218,8 +218,13 @@ class Game(arcade.Window):
 
         """Water update stuff"""
 
-        for cell in world.water_cells.copy():
-            xy_to_update += world.water_movement((cell[0], cell[1]))
+        """for cell in world.water_cells.copy():
+            xy_to_update += world.water_movement((cell[0], cell[1]))"""
+
+        # for every chunk, run world.water_movement for every water cell in the chunk
+        for chunk in world.water_chunks:
+            for cell in chunk:
+                xy_to_update += world.water_movement((cell[0], cell[1]))
 
         for pos in xy_to_update:
             if pos == None:

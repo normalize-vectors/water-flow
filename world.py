@@ -2,6 +2,7 @@ import numpy as np
 from perlin_noise import PerlinNoise
 from random import seed, randrange
 from multiprocessing import Pool
+import chunk
 
 seed(a=1)
 class World:
@@ -48,6 +49,8 @@ class World:
             data = pool.map(self._gen_row, range(self.size[0]))
         concatenated_arrays = np.array(data, dtype=np.float16)
         self.ground, self.ground_display = np.split(concatenated_arrays, 2, axis=1)
+
+        self.matrix = self.ground
 
     def height(self, x, y):
         """Returns the height of the coordinate x,y. Height = height of ground + height of water"""
@@ -160,4 +163,4 @@ class World:
         return [pos, (adjacent[0], adjacent[1])]
 
 if __name__ == "__main__":
-    world = World((200, 200))
+    world = World((1024,1024))
