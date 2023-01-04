@@ -3,14 +3,13 @@ from perlin_noise import PerlinNoise
 from random import seed, randrange
 from multiprocessing import Pool
 
-class Chunk():
+class Chunking():
     def __init__(self, matrix, matrix_size, sub_matrix_size):
         self.matrix = matrix
         self.sub_matrix_row = sub_matrix_size[0]
         self.sub_matrix_col = sub_matrix_size[1]
         self.original_matrix_row = matrix_size[0]
         self.original_matrix_col = matrix_size[1]
-        self.sub_matrix_count = self.matrix_size // self.sub_matrix_size[0]
 
     def split(self, array, nrows, ncols):
         "Split a matrix into sub-matrices."
@@ -55,6 +54,6 @@ if __name__ == "__main__":
     # create a matrix of random numbers
     Matrix = np.random.randint(0, 255, (1024,1024))
     # create a chunk object
-    chunk = Chunk(Matrix, (12,12), (4,4))
+    chunk = Chunking(Matrix, (12,12), (4,4))
     # run the main function
     chunk.main()

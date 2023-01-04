@@ -20,14 +20,17 @@ Colors seem off
 If a water cell couldn't move this frame, add it to a list so that it won't try to mvoe next frame, either
 """
 from world import World
+from chunk import Chunking
 import arcade
 from interpolate import Interpolate
+from multiprocessing import Pool
+import numpy as np
 
 # Constants ----------------------------------------------------------
 
 # Cells:
-GRID_WIDTH = 150
-GRID_HEIGHT = 150
+GRID_WIDTH = 64
+GRID_HEIGHT = 64
 CELL_WIDTH = 5
 CELL_HEIGHT = 5
 CELL_MARGIN = 0
@@ -150,6 +153,12 @@ class Game(arcade.Window):
 
     def setup(self):
         "Set up the game variables. Call to re-start the game."
+
+        # split the world matrix into chunks using chunk.py
+        Matrix = world.water
+
+        self.sub_matrices = chunking.split(np.array(Matrix), chunking.sub_matrix_row, chunking.sub_matrix_col)
+
         # Create your sprites and sprite lists here
 
         # One dimensional list of all sprites in the two-dimensional sprite list
@@ -221,10 +230,18 @@ class Game(arcade.Window):
         """for cell in world.water_cells.copy():
             xy_to_update += world.water_movement((cell[0], cell[1]))"""
 
-        # for every chunk, run world.water_movement for every water cell in the chunk
-        for chunk in world.water_chunks:
-            for cell in chunk:
-                xy_to_update += world.water_movement((cell[0], cell[1]))
+        # call water_movement() for all water, multiprocess for every chunk
+        with Pool() as p:
+            # for every chunk, run water_movement() for every cell
+            for x in range(len(self.sub_matrices)):
+                for y in range(len(self.sub_matrices[x])):
+                    for cell in self.sub_matrices[x][y]:
+                        # run water_movement() for every chunk
+                        matrixes = p.apply_async(world.water_movement(cell[x]),(cell[y]))
+
+        Matrix = chunking.combine(matrixes, chunking.sub_matrix_row, chunking.sub_matrix_col)
+
+        xy_to_update += Matrix
 
         for pos in xy_to_update:
             if pos == None:
@@ -286,6 +303,7 @@ class Game(arcade.Window):
 
 if __name__ == "__main__":
     world = World((GRID_WIDTH, GRID_HEIGHT))
+    chunking = Chunking(world,(world.size[0],world.size[1]),(16,16))
     color_mapper = Color_Mapper()
     game = Game(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
     game.setup()

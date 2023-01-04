@@ -88,7 +88,10 @@ class World:
         # TODO water selects adjacent to flow into by which has lowest height
 
         # Information about the cell of water that is doing the moving
-        x, y = pos
+        if pos == 0:
+            x, y = (0, 0)
+        else:
+            x, y = pos
         center_height = self.height(x, y)
         center_ground = self.ground[x, y]
         center_water = self.water[x, y]
