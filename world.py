@@ -3,8 +3,6 @@ from perlin_noise import PerlinNoise
 from random import seed, randrange
 from multiprocessing import Pool
 
-seed(a=1)
-
 
 class World:
 
@@ -21,10 +19,6 @@ class World:
         self.noise3 = PerlinNoise(randrange(24, 32), randrange(100))
 
         self.terrain_generation()  # Creates and populates self.ground and self.ground_display
-
-        # Dictionaries of color values populated by main
-        self.ground_color = {}
-        self.water_color = {}
 
         self.water_cells = set()
 
@@ -61,7 +55,7 @@ class World:
 
         x, y = pos
 
-        coordinates = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+        coordinates = ((x+1, y), (x-1, y), (x, y+1), (x, y-1))
         to_return = []
         for coord in coordinates:
             X, Y = coord
@@ -75,6 +69,9 @@ class World:
 
                 to_return.append((X, Y, height))
         return to_return
+
+    def shortest_adjacent_less_than(self, pos, reference_height):
+        """Returns the xy position of the shortest cell adjacent to pos."""
 
     def find_water(self):
         """Returns a list of every water pixel on the map. Slow."""

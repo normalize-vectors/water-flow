@@ -1,0 +1,5 @@
+Controls:
+ESC - Close the game
+Left click - Place down water
+Space - Generate a new world
+Left Control - Toggle to a display mod that shows height

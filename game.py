@@ -1,18 +1,15 @@
 """
 TODO list
-display mode that shows JUST height
 only start physics on button press
 water needs to prefer going downhill
 -- when picking which direction to go down, ideally it would pick the lowest side
+-- could be done fairly efficiently using a numba ufunc that's given a 3x3 slice around the moving water
 momentum
 -- complex: water could build momentum going down a hill only to splash against a wall and climb up it
 -- simple: mechanic where if a water successfully does a scenario 3, then if the next cell is shorter, then it simply
 -- teleports to that one, this would be scenario 4, ty auri :)
 better terrain generator - Specify top/bottom heights desired
 try adding diagonals to coordinates in adjacent_less_than
-in world.py, try moving scenario functions outside of water_movement
----- Each time it runs, it has to remind itself that those functions exist, surely that's a (minor) performance loss?
-is there a numpy way to make adjacent_less_than faster? optimize it in general?
 potential cheat to improve performance: update 1/2 of water cells per frame
 Make xfer coefficient dependent on delta? 
 Is there a more efficient array type than numpy? Accesing them seems to be taking a lot of time
@@ -43,8 +40,8 @@ class Color_Mapper():
 
     def __init__(self):
         # Find the min and max height of the world for color interpolation.
-        self.height_min = world.ground_display.min()*1
-        self.height_max = world.ground_display.max()*1
+        self.height_min = world.ground_display.min()
+        self.height_max = world.ground_display.max()
 
         # RGB value of highest (max) and lowest (min) ground point on the map
         self.ground_color_max = (239, 215, 203)  # (255, 255, 255)
@@ -53,6 +50,13 @@ class Color_Mapper():
         # RGB value of highest (max) and lowest (min) water point on the map
         self.water_color_max = (18, 100, 158)
         self.water_color_min = (63, 172, 255)
+
+        # Greycale colors for height display mode
+        self.height_color_max = 255
+        self.height_color_min = 0
+
+        # Enable or disable height display mode
+        self.height_display = False
 
         # Interpolation objects that will be used to interpolate the ground and water colors
         self.__ground_R__ = Interpolate(
@@ -97,9 +101,17 @@ class Color_Mapper():
             y1=self.water_color_min[2]
         )
 
+        self.__height__ = Interpolate(
+            x2=30,
+            x1=0,
+            y2=self.height_color_max,
+            y1=self.height_color_min
+        )
+
         # Dictionaries of color values as a function of height
         self.ground_dict = dict()
         self.water_dict = dict()
+        self.height_dict = dict()
 
     def ground(self, h):
         """Returns the RGB value for a ground cell with height h."""
@@ -125,6 +137,16 @@ class Color_Mapper():
             self.water_dict[h] = (r, g, b)
             return (r, g, b)
 
+    def height(self, z):
+        """Returns the greyscale color value for any cell with height h."""
+        h = int(z)
+        if h in self.height_dict.keys():
+            return self.height_dict[h]
+        else:
+            r = int(self.__height__(h))
+            self.height_dict[h] = (r, r, r)
+            return (r, r, r)
+
 
 class Cell(arcade.SpriteSolidColor):
     """
@@ -147,13 +169,20 @@ class Cell(arcade.SpriteSolidColor):
         """
         Update the color of the sprite based on the world matrices.
         """
-        z = world.water[self.grid_x, self.grid_y]
-        if z == 0:
-            # This cell has no water.
-            self.color = self.ground_color
+        # Heightmap display mode
+        if color_mapper.height_display:
+            z = world.height(self.grid_x, self.grid_y)
+            self.color = color_mapper.height(z)
+
+        # Regular display mode
         else:
-            # This cell has water on it.
-            self.color = color_mapper.water(z)
+            z = world.water[self.grid_x, self.grid_y]
+            if z == 0:
+                # This cell has no water.
+                self.color = self.ground_color
+            else:
+                # This cell has water on it.
+                self.color = color_mapper.water(z)
 
 
 class Game(arcade.Window):
@@ -256,7 +285,6 @@ class Game(arcade.Window):
 
         """UI Stuff"""
 
-        # HUD
         c = str((self.mouse_x, self.mouse_y)).ljust(10)
         ground = str(round(world.ground[self.mouse_x, self.mouse_y], 2)).ljust(6)
         water = str(round(world.water[self.mouse_x, self.mouse_y], 2)).ljust(6)
@@ -273,11 +301,16 @@ class Game(arcade.Window):
         """
         match key:
             case 32:  # Spacebar
+                # Regenerate the world
                 world.__init__((GRID_WIDTH, GRID_HEIGHT))
                 color_mapper.__init__()
                 self.setup()  # Reset the game
             case 65307:  # Escape
                 arcade.close_window()  # Close the game
+            case 65507:  # left control
+                # Toggle the height_display mode
+                color_mapper.height_display = not color_mapper.height_display
+                self.grid_sprite_list.update()
 
     def on_key_release(self, key, key_modifiers):
         """
