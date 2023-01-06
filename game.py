@@ -8,8 +8,10 @@ TODO list
 1 & 2 can be implemented together. Could be done by replacing world.adjacent_less_than() with a
 Numba vectorized ufunc that is given the 3x3 slice of the world.water array centered around
 
+3 would likely be just as costly to performance as world.water_movement is, optimization necessary
+
 4 is tricky. Potential options:
-    - Further research ways to Python code
+    - Multiprocessing
     - Only process half of water cells every frame (lame)
     - Rewrite parts of code to utilize Numba
     - Rewrite parts of code to utilize Cython
