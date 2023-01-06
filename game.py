@@ -1,27 +1,28 @@
 """
 TODO list
-only start physics on button press
-water needs to prefer going downhill
--- when picking which direction to go down, ideally it would pick the lowest side
--- could be done fairly efficiently using a numba ufunc that's given a 3x3 slice around the moving water
-momentum
--- complex: water could build momentum going down a hill only to splash against a wall and climb up it
--- simple: mechanic where if a water successfully does a scenario 3, then if the next cell is shorter, then it simply
--- teleports to that one, this would be scenario 4, ty auri :)
-better terrain generator - Specify top/bottom heights desired
-try adding diagonals to coordinates in adjacent_less_than
-potential cheat to improve performance: update 1/2 of water cells per frame
-Make xfer coefficient dependent on delta? 
-Is there a more efficient array type than numpy? Accesing them seems to be taking a lot of time
-If a water cell couldn't move this frame, add it to a list so that it won't try to mvoe next frame, either
+1. Water should be able to move diagonally
+2. Water should flow to the shortest of the adjacent cells
+3. Erosion
+4. Improve performance
+
+1 & 2 can be implemented together. Could be done by replacing world.adjacent_less_than() with a
+Numba vectorized ufunc that is given the 3x3 slice of the world.water array centered around
+
+4 is tricky. Potential options:
+    - Further research ways to Python code
+    - Only process half of water cells every frame (lame)
+    - Rewrite parts of code to utilize Numba
+    - Rewrite parts of code to utilize Cython
+    - Rewrite world.water_movement() in C++, import using Pybind11 or Boost.Python
+    - Rewrite entirely in C++
 """
 from world import World
 import arcade
 from interpolate import Interpolate
 
 
-GRID_WIDTH = 150
-GRID_HEIGHT = 150
+GRID_WIDTH = 120
+GRID_HEIGHT = 120
 CELL_WIDTH = 5
 CELL_HEIGHT = 5
 CELL_MARGIN = 0
@@ -193,7 +194,7 @@ class Game(arcade.Window):
     def __init__(self, width, height, title):
         super().__init__(width, height, title)
 
-        # Controls stuff
+        # Control variables
         self.left_click = False
         self.mouse_x = 0
         self.mouse_y = 0
@@ -204,7 +205,6 @@ class Game(arcade.Window):
         """
         Set up the game variables. Call to re-start the game.
         """
-        # Create your sprites and sprite lists here
 
         # One dimensional list of all sprites in the two-dimensional sprite list
         self.grid_sprite_list = arcade.SpriteList()
@@ -301,22 +301,15 @@ class Game(arcade.Window):
         """
         match key:
             case 32:  # Spacebar
-                # Regenerate the world
-                world.__init__((GRID_WIDTH, GRID_HEIGHT))
-                color_mapper.__init__()
+                world.__init__((GRID_WIDTH, GRID_HEIGHT))  # Regenerate the world
+                color_mapper.__init__()  # Reset the colors
                 self.setup()  # Reset the game
             case 65307:  # Escape
                 arcade.close_window()  # Close the game
             case 65507:  # left control
                 # Toggle the height_display mode
                 color_mapper.height_display = not color_mapper.height_display
-                self.grid_sprite_list.update()
-
-    def on_key_release(self, key, key_modifiers):
-        """
-        Called whenever the user lets off a previously pressed key.
-        """
-        pass
+                self.grid_sprite_list.update()  # Update color of all sprites
 
     def on_mouse_motion(self, x, y, delta_x, delta_y):
         """

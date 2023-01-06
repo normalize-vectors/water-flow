@@ -1,6 +1,6 @@
 import numpy as np
 from perlin_noise import PerlinNoise
-from random import seed, randrange
+from random import randrange
 from multiprocessing import Pool
 
 
@@ -11,7 +11,7 @@ class World:
 
         self.water = np.zeros(self.size, dtype=np.float16)
 
-        self.step_factor = 0.4  # Determines how the ground_display matrix is rounded
+        self.step_factor = 0.2  # Determines how the ground_display matrix is rounded
 
         # Noise objects used for world generation
         self.noise1 = PerlinNoise(randrange(1, 4), randrange(100))
@@ -70,9 +70,6 @@ class World:
                 to_return.append((X, Y, height))
         return to_return
 
-    def shortest_adjacent_less_than(self, pos, reference_height):
-        """Returns the xy position of the shortest cell adjacent to pos."""
-
     def find_water(self):
         """Returns a list of every water pixel on the map. Slow."""
         return np.argwhere(self.water)
@@ -80,9 +77,8 @@ class World:
     def water_movement(self, pos):
         """Transfer water from pos to one adjacent cell. Assumes that water only
         flows due to a difference in height. Returns the XY coordinates of cells
-        that were modified."""
-
-        # TODO water selects adjacent to flow into by which has lowest height
+        that were modified. See documentation folder foran  artful description of
+        scenarios 1, 2, and 3."""
 
         # Information about the cell of water that is doing the moving
         x, y = pos
